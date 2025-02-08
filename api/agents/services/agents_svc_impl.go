@@ -1,6 +1,7 @@
 package services
 
 import (
+	"log"
 	"nganterin-cs/api/agents/dto"
 	"nganterin-cs/api/agents/repositories"
 	"nganterin-cs/pkg/exceptions"
@@ -11,6 +12,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+
+	emailDTO "nganterin-cs/emails/dto"
+	emails "nganterin-cs/emails/services"
 )
 
 type CompServicesImpl struct {
@@ -47,6 +51,17 @@ func (s *CompServicesImpl) Create(ctx *gin.Context, data dto.Agents) *exceptions
 	if err != nil {
 		return err
 	}
+
+	go func() {
+		err := emails.SendAgentAccountEmail(emailDTO.EmailAgentAccount{
+			Email:    data.Email,
+			Username: data.Username,
+			Password: password,
+		})
+		if err != nil {
+			log.Println("failed to send agent account email: " + err.Error())
+		}
+	}()
 
 	return nil
 }
