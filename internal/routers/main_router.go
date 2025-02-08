@@ -2,7 +2,8 @@ package routers
 
 import (
 	"nganterin-cs/internal/injectors"
-	"nganterin-cs/pkg/middleware"
+
+	publicInjector "nganterin-cs/injectors"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -10,8 +11,10 @@ import (
 )
 
 func InternalRouters(r *gin.RouterGroup, db *gorm.DB, validate *validator.Validate) {
-	r.Use(middleware.GzipResponseMiddleware())
 	internalController := injectors.InitializeAuthController(validate)
 
+	agentController := publicInjector.InitializeAgentController(db, validate)
+
 	AuthRoutes(r, internalController)
+	AgentRoutes(r, agentController)
 }

@@ -10,6 +10,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/google/wire"
 	"gorm.io/gorm"
+	controllers2 "nganterin-cs/api/agents/controllers"
+	repositories2 "nganterin-cs/api/agents/repositories"
+	services2 "nganterin-cs/api/agents/services"
 	"nganterin-cs/api/example/controllers"
 	"nganterin-cs/api/example/repositories"
 	"nganterin-cs/api/example/services"
@@ -24,6 +27,15 @@ func InitializeExampleController(db *gorm.DB, validate *validator.Validate) cont
 	return compControllers
 }
 
+func InitializeAgentController(db *gorm.DB, validate *validator.Validate) controllers2.CompControllers {
+	compRepositories := repositories2.NewComponentRepository()
+	compServices := services2.NewComponentServices(compRepositories, db, validate)
+	compControllers := controllers2.NewCompController(compServices)
+	return compControllers
+}
+
 // injector.go:
 
 var exampleFeatureSet = wire.NewSet(repositories.NewComponentRepository, services.NewComponentServices, controllers.NewCompController)
+
+var agentFeatureSet = wire.NewSet(repositories2.NewComponentRepository, services2.NewComponentServices, controllers2.NewCompController)

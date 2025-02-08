@@ -8,30 +8,38 @@ import (
 )
 
 type Env struct {
-	DB_USER        string
-	DB_PASSWORD    string
-	DB_HOST        string
-	DB_PORT        string
-	DB_NAME        string
-	PORT           string
-	JWT_SECRET     string
-	ENVIRONMENT    string
-	ADMIN_USERNAME string
-	ADMIN_PASSWORD string
+	DB_USER            string
+	DB_PASSWORD        string
+	DB_HOST            string
+	DB_PORT            string
+	DB_NAME            string
+	ENVIRONMENT        string
+	PORT               string
+	JWT_SECRET         string
+	SMTP_SERVER        string
+	SMTP_PORT          string
+	SMTP_EMAIL         string
+	SMTP_PASSWORD      string
+	WEBCLIENT_BASE_URL string
+	DASHBOARD_BASE_URL string
 }
 
 func InitEnvCheck() {
 	environment := Env{
-		DB_USER:        os.Getenv("DB_USER"),
-		DB_PASSWORD:    os.Getenv("DB_PASSWORD"),
-		DB_HOST:        os.Getenv("DB_HOST"),
-		DB_PORT:        os.Getenv("DB_PORT"),
-		DB_NAME:        os.Getenv("DB_NAME"),
-		PORT:           os.Getenv("PORT"),
-		JWT_SECRET:     os.Getenv("JWT_SECRET"),
-		ENVIRONMENT:    os.Getenv("ENVIRONMENT"),
-		ADMIN_USERNAME: os.Getenv("ADMIN_USERNAME"),
-		ADMIN_PASSWORD: os.Getenv("ADMIN_PASSWORD"),
+		DB_USER:            os.Getenv("DB_USER"),
+		DB_PASSWORD:        os.Getenv("DB_PASSWORD"),
+		DB_HOST:            os.Getenv("DB_HOST"),
+		DB_PORT:            os.Getenv("DB_PORT"),
+		DB_NAME:            os.Getenv("DB_NAME"),
+		ENVIRONMENT:        os.Getenv("ENVIRONMENT"),
+		PORT:               os.Getenv("PORT"),
+		JWT_SECRET:         os.Getenv("JWT_SECRET"),
+		SMTP_SERVER:        os.Getenv("SMTP_SERVER"),
+		SMTP_PORT:          os.Getenv("SMTP_PORT"),
+		SMTP_EMAIL:         os.Getenv("SMTP_EMAIL"),
+		SMTP_PASSWORD:      os.Getenv("SMTP_PASSWORD"),
+		WEBCLIENT_BASE_URL: os.Getenv("WEBCLIENT_BASE_URL"),
+		DASHBOARD_BASE_URL: os.Getenv("DASHBOARD_BASE_URL"),
 	}
 
 	isEmpty, emptyFields := checkEmptyFields(environment)
