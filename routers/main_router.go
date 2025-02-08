@@ -2,7 +2,6 @@ package routers
 
 import (
 	"net/http"
-	"nganterin-cs/injectors"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -16,8 +15,4 @@ func CompRouters(r *gin.RouterGroup, db *gorm.DB, validate *validator.Validate) 
 			"message": "pong",
 		})
 	})
-
-	exampleController := injectors.InitializeExampleController(db, validate)
-
-	ExampleRoutes(r, exampleController)
 }

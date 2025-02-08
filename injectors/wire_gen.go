@@ -10,32 +10,20 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/google/wire"
 	"gorm.io/gorm"
-	controllers2 "nganterin-cs/api/agents/controllers"
-	repositories2 "nganterin-cs/api/agents/repositories"
-	services2 "nganterin-cs/api/agents/services"
-	"nganterin-cs/api/example/controllers"
-	"nganterin-cs/api/example/repositories"
-	"nganterin-cs/api/example/services"
+	"nganterin-cs/api/agents/controllers"
+	"nganterin-cs/api/agents/repositories"
+	"nganterin-cs/api/agents/services"
 )
 
 // Injectors from injector.go:
 
-func InitializeExampleController(db *gorm.DB, validate *validator.Validate) controllers.CompControllers {
+func InitializeAgentController(db *gorm.DB, validate *validator.Validate) controllers.CompControllers {
 	compRepositories := repositories.NewComponentRepository()
-	compService := services.NewComponentServices(compRepositories, db, validate)
-	compControllers := controllers.NewCompController(compService)
-	return compControllers
-}
-
-func InitializeAgentController(db *gorm.DB, validate *validator.Validate) controllers2.CompControllers {
-	compRepositories := repositories2.NewComponentRepository()
-	compServices := services2.NewComponentServices(compRepositories, db, validate)
-	compControllers := controllers2.NewCompController(compServices)
+	compServices := services.NewComponentServices(compRepositories, db, validate)
+	compControllers := controllers.NewCompController(compServices)
 	return compControllers
 }
 
 // injector.go:
 
-var exampleFeatureSet = wire.NewSet(repositories.NewComponentRepository, services.NewComponentServices, controllers.NewCompController)
-
-var agentFeatureSet = wire.NewSet(repositories2.NewComponentRepository, services2.NewComponentServices, controllers2.NewCompController)
+var agentFeatureSet = wire.NewSet(repositories.NewComponentRepository, services.NewComponentServices, controllers.NewCompController)
