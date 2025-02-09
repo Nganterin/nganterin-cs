@@ -84,12 +84,34 @@ func (h *CompControllersImpl) ChatWebSocket(ctx *gin.Context) {
 
 		clientsMu.Lock()
 		if senderData.Type == dto.Customer {
+			data.CustomerUUID = senderData.UUID
+			data.IsCSChat = false
+			data.SenderName = senderData.Name
+
+			msg, exc = json.Marshal(data)
+			if exc != nil {
+				errorResponse := fmt.Sprintf(`{"error": "Invalid JSON format: %s"}`, err.Error())
+				conn.WriteMessage(websocket.TextMessage, []byte(errorResponse))
+				continue
+			}
+
 			for _, client := range clients {
 				if client.Type == dto.Agent {
 					client.Conn.WriteMessage(websocket.TextMessage, msg)
 				}
 			}
 		} else if senderData.Type == dto.Agent {
+			data.AgentUUID = senderData.UUID
+			data.IsCSChat = true
+			data.SenderName = "Temenin Agent"
+
+			msg, exc = json.Marshal(data)
+			if exc != nil {
+				errorResponse := fmt.Sprintf(`{"error": "Invalid JSON format: %s"}`, err.Error())
+				conn.WriteMessage(websocket.TextMessage, []byte(errorResponse))
+				continue
+			}
+
 			if targetConn, ok := clients[data.CustomerUUID]; ok && targetConn.Type == dto.Customer {
 				targetConn.Conn.WriteMessage(websocket.TextMessage, msg)
 			}
