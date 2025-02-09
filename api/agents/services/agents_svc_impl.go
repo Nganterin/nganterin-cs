@@ -2,12 +2,16 @@ package services
 
 import (
 	"log"
+	"net/http"
 	"nganterin-cs/api/agents/dto"
 	"nganterin-cs/api/agents/repositories"
 	"nganterin-cs/pkg/exceptions"
 	"nganterin-cs/pkg/helpers"
 	"nganterin-cs/pkg/mapper"
+	"os"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
@@ -64,4 +68,41 @@ func (s *CompServicesImpl) Create(ctx *gin.Context, data dto.Agents) *exceptions
 	}()
 
 	return nil
+}
+
+func (s *CompServicesImpl) SignIn(ctx *gin.Context, data dto.Login) (*string, *exceptions.Exception) {
+	validateErr := s.validate.Struct(data)
+	if validateErr != nil {
+		return nil, exceptions.NewValidationException(validateErr)
+	}
+
+	agentData, err := s.repo.FindByUsername(ctx, s.DB, data.Username)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.CheckPasswordHash(data.Password, agentData.HashedPassword)
+	if err != nil {
+		return nil, err
+	}
+
+	secret := os.Getenv("JWT_SECRET")
+	token := jwt.New(jwt.SigningMethodHS256)
+	claims := token.Claims.(jwt.MapClaims)
+
+	claims["uuid"] = agentData.UUID
+	claims["email"] = agentData.Email
+	claims["name"] = agentData.Name
+	claims["role"] = agentData.Role
+	claims["type"] = "agent"
+
+	claims["exp"] = time.Now().Add(time.Hour * 24 * 7).Unix()
+
+	secretKey := []byte(secret)
+	tokenString, signError := token.SignedString(secretKey)
+	if signError != nil {
+		return nil, exceptions.NewException(http.StatusInternalServerError, exceptions.ErrTokenGenerate)
+	}
+
+	return &tokenString, nil
 }

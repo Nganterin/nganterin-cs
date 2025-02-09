@@ -6,3 +6,8 @@ type Agents struct {
 	Name     string `json:"name" validate:"required"`
 	Role     string `json:"role" validate:"required,oneof=agent"`
 }
+
+type Login struct {
+	Username string `json:"username" validate:"required,min=4"`
+	Password string `json:"password" validate:"required,min=8"`
+}

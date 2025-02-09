@@ -39,3 +39,25 @@ func (h *CompControllersImpl) Create(ctx *gin.Context) {
 		Message: "data created successfully",
 	})
 }
+
+func (h *CompControllersImpl) SignIn(ctx *gin.Context) {
+	var data dto.Login
+
+	jsonErr := ctx.ShouldBindJSON(&data)
+	if jsonErr != nil {
+		ctx.JSON(http.StatusBadRequest, exceptions.NewException(http.StatusBadRequest, exceptions.ErrBadRequest))
+		return
+	}
+
+	token, err := h.services.SignIn(ctx, data)
+	if err != nil {
+		ctx.JSON(err.Status, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, dto.Response{
+		Status:  http.StatusOK,
+		Body:    token,
+		Message: "data signed in successfully",
+	})
+}

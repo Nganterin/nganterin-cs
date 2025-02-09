@@ -9,4 +9,5 @@ import (
 
 type CompServices interface {
 	Create(ctx *gin.Context, data dto.Agents) *exceptions.Exception
+	SignIn(ctx *gin.Context, data dto.Login) (*string, *exceptions.Exception)
 }

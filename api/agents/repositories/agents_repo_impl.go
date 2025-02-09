@@ -24,37 +24,37 @@ func (r *CompRepositoriesImpl) Create(ctx *gin.Context, tx *gorm.DB, data models
 	return nil
 }
 
-func (r *CompRepositoriesImpl) FindByUsername(ctx *gin.Context, tx *gorm.DB, username string) *exceptions.Exception {
+func (r *CompRepositoriesImpl) FindByUsername(ctx *gin.Context, tx *gorm.DB, username string) (*models.Agents, *exceptions.Exception) {
 	var agent models.Agents
 
 	result := tx.Where("username = ?", username).First(&agent)
 	if result.Error != nil {
-		return exceptions.ParseGormError(result.Error)
+		return nil, exceptions.ParseGormError(result.Error)
 	}
 
-	return nil
+	return &agent, nil
 }
 
-func (r *CompRepositoriesImpl) FindByUUID(ctx *gin.Context, tx *gorm.DB, uuid string) *exceptions.Exception {
+func (r *CompRepositoriesImpl) FindByUUID(ctx *gin.Context, tx *gorm.DB, uuid string) (*models.Agents, *exceptions.Exception) {
 	var agent models.Agents
 
 	result := tx.Where("uuid = ?", uuid).First(&agent)
 	if result.Error != nil {
-		return exceptions.ParseGormError(result.Error)
+		return nil, exceptions.ParseGormError(result.Error)
 	}
 
-	return nil
+	return &agent, nil
 }
 
-func (r *CompRepositoriesImpl) FindAll(ctx *gin.Context, tx *gorm.DB) *exceptions.Exception {
+func (r *CompRepositoriesImpl) FindAll(ctx *gin.Context, tx *gorm.DB) ([]models.Agents, *exceptions.Exception) {
 	var agents []models.Agents
 
 	result := tx.Find(&agents)
 	if result.Error != nil {
-		return exceptions.ParseGormError(result.Error)
+		return nil, exceptions.ParseGormError(result.Error)
 	}
 
-	return nil
+	return agents, nil
 }
 
 func (r *CompRepositoriesImpl) Update(ctx *gin.Context, tx *gorm.DB, data models.Agents) *exceptions.Exception {
