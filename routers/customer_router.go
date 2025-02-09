@@ -9,6 +9,6 @@ import (
 func CustomerRoutes(r *gin.RouterGroup, controllers controllers.CompControllers) {
 	customerGroup := r.Group("/customer")
 	{
-		customerGroup.GET("/register", controllers.Create)
+		customerGroup.POST("/register", controllers.Create)
 	}
 }
