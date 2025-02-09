@@ -16,6 +16,9 @@ import (
 	controllers2 "nganterin-cs/api/chats/controllers"
 	repositories2 "nganterin-cs/api/chats/repositories"
 	services2 "nganterin-cs/api/chats/services"
+	controllers3 "nganterin-cs/api/customers/controllers"
+	repositories3 "nganterin-cs/api/customers/repositories"
+	services3 "nganterin-cs/api/customers/services"
 )
 
 // Injectors from injector.go:
@@ -34,8 +37,17 @@ func InitializeChatController(db *gorm.DB, validate *validator.Validate) control
 	return compControllers
 }
 
+func InitializeCustomerController(db *gorm.DB, validate *validator.Validate) controllers3.CompControllers {
+	compRepositories := repositories3.NewComponentRepository()
+	compServices := services3.NewComponentServices(compRepositories, db, validate)
+	compControllers := controllers3.NewCompController(compServices)
+	return compControllers
+}
+
 // injector.go:
 
 var agentFeatureSet = wire.NewSet(repositories.NewComponentRepository, services.NewComponentServices, controllers.NewCompController)
 
 var chatFeatureSet = wire.NewSet(repositories2.NewComponentRepository, services2.NewComponentServices, controllers2.NewCompController)
+
+var customerFeatureSet = wire.NewSet(repositories3.NewComponentRepository, services3.NewComponentServices, controllers3.NewCompController)

@@ -13,6 +13,10 @@ import (
 	chatControllers "nganterin-cs/api/chats/controllers"
 	chatRepositories "nganterin-cs/api/chats/repositories"
 	chatServices "nganterin-cs/api/chats/services"
+	
+	customerControllers "nganterin-cs/api/customers/controllers"
+	customerRepositories "nganterin-cs/api/customers/repositories"
+	customerServices "nganterin-cs/api/customers/services"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/wire"
@@ -31,6 +35,12 @@ var chatFeatureSet = wire.NewSet(
 	chatControllers.NewCompController,
 )
 
+var customerFeatureSet = wire.NewSet(
+	customerRepositories.NewComponentRepository,
+	customerServices.NewComponentServices,
+	customerControllers.NewCompController,
+)
+
 func InitializeAgentController(db *gorm.DB, validate *validator.Validate) agentControllers.CompControllers {
 	wire.Build(agentFeatureSet)
 	return nil
@@ -38,5 +48,10 @@ func InitializeAgentController(db *gorm.DB, validate *validator.Validate) agentC
 
 func InitializeChatController(db *gorm.DB, validate *validator.Validate) chatControllers.CompControllers {
 	wire.Build(chatFeatureSet)
+	return nil
+}
+
+func InitializeCustomerController(db *gorm.DB, validate *validator.Validate) customerControllers.CompControllers {
+	wire.Build(customerFeatureSet)
 	return nil
 }

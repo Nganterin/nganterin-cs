@@ -21,6 +21,7 @@ func main() {
 
 	err := db.AutoMigrate(
 		&models.Agents{},
+		&models.Customers{},
 	)
 	if err != nil {
 		panic("failed to migrate models: " + err.Error())

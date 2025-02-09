@@ -18,6 +18,8 @@ func CompRouters(r *gin.RouterGroup, db *gorm.DB, validate *validator.Validate) 
 	})
 
 	chatController := injectors.InitializeChatController(db, validate)
+	customerController := injectors.InitializeCustomerController(db, validate)
 
 	ChatRoutes(r, chatController)
+	CustomerRoutes(r, customerController)
 }
