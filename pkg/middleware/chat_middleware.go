@@ -41,7 +41,13 @@ func ChatMiddleware() gin.HandlerFunc {
 			UUID:  claims["uuid"].(string),
 			Name:  claims["name"].(string),
 			Email: claims["email"].(string),
-			Type:  claims["type"].(dto.Type),
+		}
+
+		switch claims["type"].(string) {
+		case "agent":
+			sender.Type = dto.Agent
+		case "customer":
+			sender.Type = dto.Customer
 		}
 
 		c.Set("sender", sender)

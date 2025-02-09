@@ -2,17 +2,17 @@ package helpers
 
 import (
 	"net/http"
-	"nganterin-cs/api/customers/dto"
+	"nganterin-cs/api/chats/dto"
 	"nganterin-cs/pkg/exceptions"
 
 	"github.com/gin-gonic/gin"
 )
 
-func GetCustomerData(c *gin.Context) (dto.CustomerOutput, *exceptions.Exception) {
-	var result dto.CustomerOutput
-	data, _ := c.Get("customer")
+func GetSenderData(c *gin.Context) (dto.ChatSender, *exceptions.Exception) {
+	var result dto.ChatSender
+	data, _ := c.Get("sender")
 
-	result, ok := data.(dto.CustomerOutput)
+	result, ok := data.(dto.ChatSender)
 	if !ok {
 		return result, exceptions.NewException(http.StatusUnauthorized, exceptions.ErrInvalidTokenStructure)
 	}
