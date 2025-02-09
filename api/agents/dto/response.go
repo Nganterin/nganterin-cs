@@ -7,9 +7,10 @@ type Response struct {
 }
 
 type AgentOutput struct {
-	UUID           string `json:"uuid"`
-	Username       string `json:"username"`
-	Email          string `json:"email"`
-	Role           string `json:"role"`
-	IsActive       string `json:"is_active"`
+	UUID     string `json:"uuid"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Name     string `json:"name"`
+	Role     string `json:"role"`
+	IsActive string `json:"is_active"`
 }

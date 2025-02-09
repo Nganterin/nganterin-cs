@@ -9,7 +9,7 @@ import (
 
 func ChatRoutes(r *gin.RouterGroup, controllers controllers.CompControllers) {
 	wsGroup := r.Group("/ws")
-	wsGroup.Use(middleware.AuthMiddleware())
+	wsGroup.Use(middleware.ChatMiddleware())
 	{
 		wsGroup.GET("/chat", controllers.ChatWebSocket)
 	}

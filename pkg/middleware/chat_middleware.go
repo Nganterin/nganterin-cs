@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"net/http"
-	"nganterin-cs/api/customers/dto"
+	"nganterin-cs/api/chats/dto"
 	"nganterin-cs/pkg/exceptions"
 	"os"
 
@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AuthMiddleware() gin.HandlerFunc {
+func ChatMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		secret := os.Getenv("JWT_SECRET")
 
@@ -37,14 +37,14 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		customer := dto.CustomerOutput{
+		sender := dto.ChatSender{
 			UUID:  claims["uuid"].(string),
 			Name:  claims["name"].(string),
 			Email: claims["email"].(string),
-			Phone: claims["phone"].(string),
+			Type:  claims["type"].(dto.Type),
 		}
 
-		c.Set("customer", customer)
+		c.Set("sender", sender)
 
 		c.Next()
 	}

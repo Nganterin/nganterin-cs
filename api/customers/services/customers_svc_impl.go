@@ -52,6 +52,7 @@ func (s *CompServicesImpl) Create(ctx *gin.Context, data dto.Customers) (*string
 	claims["email"] = data.Email
 	claims["name"] = data.Name
 	claims["phone"] = data.Phone
+	claims["type"] = "customer"
 
 	claims["exp"] = time.Now().Add(time.Hour * 24 * 7).Unix()
 

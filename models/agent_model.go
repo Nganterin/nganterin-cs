@@ -19,6 +19,7 @@ type Agents struct {
 	UUID           string `gorm:"not null;unique;index"`
 	Username       string `gorm:"not null;unique;index"`
 	HashedPassword string `gorm:"not null"`
+	Name           string `gorm:"not null"`
 	Email          string `gorm:"not null;unique;index"`
 	Role           Role   `gorm:"type:agent_role;not null"`
 	IsActive       bool   `gorm:"not null"`
