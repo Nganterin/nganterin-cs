@@ -15,6 +15,8 @@ type ChatOutput struct {
 	IsCSChat     bool      `json:"is_cs_chat"`
 	CreatedAt    time.Time `json:"created_at"`
 
+	HumanizedCreatedAt string `json:"humanized_created_at"`
+
 	Customer CustomerOutput `json:"customer"`
 }
 
