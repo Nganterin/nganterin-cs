@@ -53,6 +53,13 @@ func NewWebSocketServices(services services.CompServices, repo repositories.Comp
 }
 
 func (ws *WebSocketServiceImpl) HandleConnection(ctx *gin.Context, senderData dto.ChatSender) *exceptions.Exception {
+	ws.clientsMu.Lock()
+	if existingConn, exists := ws.clients[senderData.UUID]; exists {
+		existingConn.Conn.Close()
+		delete(ws.clients, senderData.UUID)
+	}
+	ws.clientsMu.Unlock()
+
 	conn, err := ws.upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
 		return exceptions.NewException(http.StatusInternalServerError, err.Error())
