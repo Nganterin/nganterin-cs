@@ -11,8 +11,14 @@ type Response struct {
 type ChatOutput struct {
 	UUID         string    `json:"uuid"`
 	CustomerUUID string    `json:"customer_uuid"`
-	AgentUUID    string    `json:"agent_uuid"`
 	Message      string    `json:"message"`
 	IsCSChat     bool      `json:"is_cs_chat"`
 	CreatedAt    time.Time `json:"created_at"`
+
+	Customer CustomerOutput `json:"customer"`
+}
+
+type CustomerOutput struct {
+	UUID string `json:"uuid"`
+	Name string `json:"name"`
 }

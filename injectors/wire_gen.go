@@ -16,6 +16,7 @@ import (
 	controllers2 "nganterin-cs/api/chats/controllers"
 	repositories2 "nganterin-cs/api/chats/repositories"
 	services2 "nganterin-cs/api/chats/services"
+	"nganterin-cs/api/chats/websockets"
 	controllers3 "nganterin-cs/api/customers/controllers"
 	repositories3 "nganterin-cs/api/customers/repositories"
 	services3 "nganterin-cs/api/customers/services"
@@ -33,7 +34,8 @@ func InitializeAgentController(db *gorm.DB, validate *validator.Validate) contro
 func InitializeChatController(db *gorm.DB, validate *validator.Validate) controllers2.CompControllers {
 	compRepositories := repositories2.NewComponentRepository()
 	compServices := services2.NewComponentServices(compRepositories, db, validate)
-	compControllers := controllers2.NewCompController(compServices)
+	webSocketServices := websockets.NewWebSocketServices(compServices, compRepositories, db, validate)
+	compControllers := controllers2.NewCompController(compServices, webSocketServices)
 	return compControllers
 }
 
@@ -48,6 +50,6 @@ func InitializeCustomerController(db *gorm.DB, validate *validator.Validate) con
 
 var agentFeatureSet = wire.NewSet(repositories.NewComponentRepository, services.NewComponentServices, controllers.NewCompController)
 
-var chatFeatureSet = wire.NewSet(repositories2.NewComponentRepository, services2.NewComponentServices, controllers2.NewCompController)
+var chatFeatureSet = wire.NewSet(repositories2.NewComponentRepository, websockets.NewWebSocketServices, services2.NewComponentServices, controllers2.NewCompController)
 
 var customerFeatureSet = wire.NewSet(repositories3.NewComponentRepository, services3.NewComponentServices, controllers3.NewCompController)

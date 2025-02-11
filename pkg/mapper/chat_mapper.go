@@ -18,5 +18,6 @@ func MapChatModelToOutput(data models.Chats) dto.ChatOutput {
 	var result dto.ChatOutput
 
 	mapstructure.Decode(data, &result)
+	result.CreatedAt = data.CreatedAt
 	return result
 }

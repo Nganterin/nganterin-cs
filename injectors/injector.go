@@ -1,6 +1,6 @@
 // go:build wireinject
 // go:build wireinject
-//go:build wireinject
+// go:build wireinject
 // +build wireinject
 
 package injectors
@@ -9,11 +9,12 @@ import (
 	agentControllers "nganterin-cs/api/agents/controllers"
 	agentRepositories "nganterin-cs/api/agents/repositories"
 	agentServices "nganterin-cs/api/agents/services"
-	
+
 	chatControllers "nganterin-cs/api/chats/controllers"
 	chatRepositories "nganterin-cs/api/chats/repositories"
 	chatServices "nganterin-cs/api/chats/services"
-	
+	chatWebsockets "nganterin-cs/api/chats/websockets"
+
 	customerControllers "nganterin-cs/api/customers/controllers"
 	customerRepositories "nganterin-cs/api/customers/repositories"
 	customerServices "nganterin-cs/api/customers/services"
@@ -31,6 +32,7 @@ var agentFeatureSet = wire.NewSet(
 
 var chatFeatureSet = wire.NewSet(
 	chatRepositories.NewComponentRepository,
+	chatWebsockets.NewWebSocketServices,
 	chatServices.NewComponentServices,
 	chatControllers.NewCompController,
 )

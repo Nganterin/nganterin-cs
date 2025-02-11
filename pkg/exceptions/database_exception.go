@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func ParseGormError(err error) *Exception {
+func ParseGormError(tx *gorm.DB, err error) *Exception {
 	switch {
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return &Exception{

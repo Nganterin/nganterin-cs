@@ -1,9 +1,10 @@
 package dto
 
+import "github.com/gorilla/websocket"
+
 type Chats struct {
 	CustomerUUID string `json:"customer_uuid,omitempty" validate:"required,uuid4"`
 	AgentUUID    string `json:"agent_uuid,omitempty" validate:"required,uuid4"`
-	SenderName   string `json:"sender_name,omitempty"`
 	Message      string `json:"message,omitempty" validate:"required"`
 	IsCSChat     bool   `json:"is_cs_chat,omitempty"`
 }
@@ -20,4 +21,10 @@ type ChatSender struct {
 	Name  string `json:"name,omitempty"`
 	Email string `json:"email,omitempty"`
 	Type  Type   `json:"type,omitempty"`
+}
+
+type Connection struct {
+	Conn *websocket.Conn
+	UUID string
+	Type Type
 }
