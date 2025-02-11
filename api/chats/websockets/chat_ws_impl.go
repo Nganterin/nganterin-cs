@@ -11,12 +11,20 @@ import (
 	"nganterin-cs/pkg/helpers"
 	"nganterin-cs/pkg/mapper"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"gorm.io/gorm"
+)
+
+const (
+	writeWait      = 10 * time.Second
+	pongWait       = 60 * time.Second
+	pingPeriod     = (pongWait * 9) / 10
+	maxMessageSize = 512
 )
 
 type WebSocketServiceImpl struct {
@@ -50,6 +58,13 @@ func (ws *WebSocketServiceImpl) HandleConnection(ctx *gin.Context, senderData dt
 		return exceptions.NewException(http.StatusInternalServerError, err.Error())
 	}
 
+	conn.SetReadLimit(maxMessageSize)
+	conn.SetReadDeadline(time.Now().Add(pongWait))
+	conn.SetPongHandler(func(string) error {
+		conn.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
+
 	ws.clientsMu.Lock()
 	ws.clients[senderData.UUID] = &dto.Connection{
 		Conn: conn,
@@ -58,9 +73,28 @@ func (ws *WebSocketServiceImpl) HandleConnection(ctx *gin.Context, senderData dt
 	}
 	ws.clientsMu.Unlock()
 
+	go ws.pingConnection(conn, senderData.UUID)
+
 	go ws.HandleMessages(ctx, conn, senderData)
 
 	return nil
+}
+
+func (ws *WebSocketServiceImpl) pingConnection(conn *websocket.Conn, uuid string) {
+	ticker := time.NewTicker(pingPeriod)
+	defer func() {
+		ticker.Stop()
+		ws.RemoveConnection(nil, uuid)
+		conn.Close()
+	}()
+
+	for range ticker.C {
+		conn.SetWriteDeadline(time.Now().Add(writeWait))
+		if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			fmt.Printf("Ping error for client %s: %v\n", uuid, err)
+			return
+		}
+	}
 }
 
 func (ws *WebSocketServiceImpl) HandleMessages(ctx *gin.Context, conn *websocket.Conn, senderData dto.ChatSender) {
@@ -72,14 +106,16 @@ func (ws *WebSocketServiceImpl) HandleMessages(ctx *gin.Context, conn *websocket
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
-			fmt.Println("Read error:", err)
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				fmt.Printf("Unexpected close error for client %s: %v\n", senderData.UUID, err)
+			}
 			break
 		}
 
 		var data dto.Chats
 		if err := json.Unmarshal(msg, &data); err != nil {
 			errorResponse := fmt.Sprintf(`{"error": "Invalid JSON format: %s"}`, err.Error())
-			conn.WriteMessage(websocket.TextMessage, []byte(errorResponse))
+			ws.writeMessage(conn, []byte(errorResponse))
 			continue
 		}
 
@@ -93,10 +129,15 @@ func (ws *WebSocketServiceImpl) HandleMessages(ctx *gin.Context, conn *websocket
 
 		if err := ws.ProcessMessage(ctx, &data); err != nil {
 			errorResponse := fmt.Sprintf(`{"error": "%s"}`, err.Error())
-			conn.WriteMessage(websocket.TextMessage, []byte(errorResponse))
+			ws.writeMessage(conn, []byte(errorResponse))
 			continue
 		}
 	}
+}
+
+func (ws *WebSocketServiceImpl) writeMessage(conn *websocket.Conn, message []byte) error {
+	conn.SetWriteDeadline(time.Now().Add(writeWait))
+	return conn.WriteMessage(websocket.TextMessage, message)
 }
 
 func (ws *WebSocketServiceImpl) ProcessMessage(ctx *gin.Context, data *dto.Chats) *exceptions.Exception {
@@ -136,10 +177,15 @@ func (ws *WebSocketServiceImpl) ProcessMessage(ctx *gin.Context, data *dto.Chats
 }
 
 func (ws *WebSocketServiceImpl) SendMessageToAgents(ctx *gin.Context, message []byte) *exceptions.Exception {
+	ws.clientsMu.Lock()
+	defer ws.clientsMu.Unlock()
+
 	for _, client := range ws.clients {
 		if client.Type == dto.Agent {
-			if err := client.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
-				return exceptions.NewException(http.StatusInternalServerError, err.Error())
+			if err := ws.writeMessage(client.Conn, message); err != nil {
+				fmt.Printf("Error sending message to agent %s: %v\n", client.UUID, err)
+				go ws.RemoveConnection(nil, client.UUID)
+				continue
 			}
 		}
 	}
@@ -147,12 +193,14 @@ func (ws *WebSocketServiceImpl) SendMessageToAgents(ctx *gin.Context, message []
 }
 
 func (ws *WebSocketServiceImpl) SendMessageToCustomer(ctx *gin.Context, customerUUID string, message []byte) *exceptions.Exception {
+	ws.clientsMu.Lock()
+	defer ws.clientsMu.Unlock()
+
 	if targetConn, ok := ws.clients[customerUUID]; ok && targetConn.Type == dto.Customer {
-		err := targetConn.Conn.WriteMessage(websocket.TextMessage, message)
-		if err != nil {
+		if err := ws.writeMessage(targetConn.Conn, message); err != nil {
+			go ws.RemoveConnection(nil, customerUUID)
 			return exceptions.NewException(http.StatusInternalServerError, err.Error())
 		}
-
 		return nil
 	}
 	return exceptions.NewException(http.StatusNotFound, "Customer not found or disconnected")
@@ -160,6 +208,9 @@ func (ws *WebSocketServiceImpl) SendMessageToCustomer(ctx *gin.Context, customer
 
 func (ws *WebSocketServiceImpl) RemoveConnection(ctx *gin.Context, uuid string) {
 	ws.clientsMu.Lock()
-	delete(ws.clients, uuid)
+	if client, exists := ws.clients[uuid]; exists {
+		client.Conn.Close()
+		delete(ws.clients, uuid)
+	}
 	ws.clientsMu.Unlock()
 }
