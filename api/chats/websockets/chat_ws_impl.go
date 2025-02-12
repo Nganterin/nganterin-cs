@@ -23,8 +23,7 @@ import (
 
 const (
 	writeWait      = 10 * time.Second
-	pongWait       = 60 * time.Second
-	pingPeriod     = (pongWait * 9) / 10
+	pingWait       = 120 * time.Second
 	maxMessageSize = 512
 )
 
@@ -67,9 +66,9 @@ func (ws *WebSocketServiceImpl) HandleConnection(ctx *gin.Context, senderData dt
 	}
 
 	conn.SetReadLimit(maxMessageSize)
-	conn.SetReadDeadline(time.Now().Add(pongWait))
+	conn.SetReadDeadline(time.Now().Add(pingWait))
 	conn.SetPongHandler(func(string) error {
-		conn.SetReadDeadline(time.Now().Add(pongWait))
+		conn.SetReadDeadline(time.Now().Add(pingWait))
 		return nil
 	})
 
@@ -85,28 +84,9 @@ func (ws *WebSocketServiceImpl) HandleConnection(ctx *gin.Context, senderData dt
 		ws.HandleSendBehindChat(ctx, conn, senderData)
 	}
 
-	go ws.pingConnection(conn, senderData.UUID)
-
 	go ws.HandleMessages(ctx, conn, senderData)
 
 	return nil
-}
-
-func (ws *WebSocketServiceImpl) pingConnection(conn *websocket.Conn, uuid string) {
-	ticker := time.NewTicker(pingPeriod)
-	defer func() {
-		ticker.Stop()
-		ws.RemoveConnection(nil, uuid)
-		conn.Close()
-	}()
-
-	for range ticker.C {
-		conn.SetWriteDeadline(time.Now().Add(writeWait))
-		if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-			fmt.Printf("Ping error for client %s: %v\n", uuid, err)
-			return
-		}
-	}
 }
 
 func (ws *WebSocketServiceImpl) HandleSendBehindChat(ctx *gin.Context, conn *websocket.Conn, senderData dto.ChatSender) *exceptions.Exception {
@@ -159,6 +139,15 @@ func (ws *WebSocketServiceImpl) HandleMessages(ctx *gin.Context, conn *websocket
 			continue
 		}
 
+		if data.Type == dto.Ping {
+			if err := ws.HandlePing(ctx, senderData); err != nil {
+				errorResponse := fmt.Sprintf(`{"error": "%s"}`, err.Error())
+				ws.writeMessage(conn, []byte(errorResponse))
+				continue
+			}
+			continue
+		}
+
 		if senderData.Type == dto.Customer {
 			data.CustomerUUID = senderData.UUID
 			data.IsCSChat = false
@@ -173,6 +162,18 @@ func (ws *WebSocketServiceImpl) HandleMessages(ctx *gin.Context, conn *websocket
 			continue
 		}
 	}
+}
+
+func (ws *WebSocketServiceImpl) HandlePing(ctx *gin.Context, senderData dto.ChatSender) *exceptions.Exception {
+	ws.clientsMu.Lock()
+	if client, exists := ws.clients[senderData.UUID]; exists {
+		client.Conn.SetPongHandler(func(string) error {
+			client.Conn.SetReadDeadline(time.Now().Add(pingWait))
+			return nil
+		})
+	}
+	ws.clientsMu.Unlock()
+	return nil
 }
 
 func (ws *WebSocketServiceImpl) writeMessage(conn *websocket.Conn, message []byte) error {
