@@ -62,7 +62,9 @@ func (ws *WebSocketServiceImpl) HandleConnection(ctx *gin.Context, senderData dt
 
 	conn, err := ws.upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
-		return exceptions.NewException(http.StatusInternalServerError, err.Error())
+		errorResponse := fmt.Sprintf(`{"error": "%s"}`, err.Error())
+		ws.writeMessage(conn, []byte(errorResponse))
+		return nil
 	}
 
 	conn.SetReadLimit(maxMessageSize)
