@@ -143,11 +143,6 @@ func (ws *WebSocketServiceImpl) HandleSendBehindChat(ctx *gin.Context, conn *web
 }
 
 func (ws *WebSocketServiceImpl) HandleMessages(ctx *gin.Context, conn *websocket.Conn, senderData dto.ChatSender) {
-	defer func() {
-		ws.RemoveConnection(ctx, senderData.UUID)
-		conn.Close()
-	}()
-
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
