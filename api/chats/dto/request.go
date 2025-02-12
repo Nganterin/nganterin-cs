@@ -1,6 +1,10 @@
 package dto
 
-import "github.com/gorilla/websocket"
+import (
+	"time"
+
+	"github.com/gorilla/websocket"
+)
 
 type ChatType string
 
@@ -33,7 +37,8 @@ type ChatSender struct {
 }
 
 type Connection struct {
-	Conn *websocket.Conn
-	UUID string
-	Type Type
+	Conn     *websocket.Conn
+	UUID     string
+	Type     Type
+	LastPing time.Time
 }

@@ -38,7 +38,7 @@ type WebSocketServiceImpl struct {
 }
 
 func NewWebSocketServices(services services.CompServices, repo repositories.CompRepositories, DB *gorm.DB, validate *validator.Validate) WebSocketServices {
-	return &WebSocketServiceImpl{
+	ws := &WebSocketServiceImpl{
 		repo:     repo,
 		DB:       DB,
 		validate: validate,
@@ -50,6 +50,8 @@ func NewWebSocketServices(services services.CompServices, repo repositories.Comp
 			},
 		},
 	}
+	go ws.monitorClients()
+	return ws
 }
 
 func (ws *WebSocketServiceImpl) HandleConnection(ctx *gin.Context, senderData dto.ChatSender) *exceptions.Exception {
@@ -76,9 +78,10 @@ func (ws *WebSocketServiceImpl) HandleConnection(ctx *gin.Context, senderData dt
 
 	ws.clientsMu.Lock()
 	ws.clients[senderData.UUID] = &dto.Connection{
-		Conn: conn,
-		UUID: senderData.UUID,
-		Type: senderData.Type,
+		Conn:     conn,
+		UUID:     senderData.UUID,
+		Type:     senderData.Type,
+		LastPing: time.Now(),
 	}
 	ws.clientsMu.Unlock()
 
@@ -204,10 +207,8 @@ func (ws *WebSocketServiceImpl) HandleMessages(ctx *gin.Context, conn *websocket
 func (ws *WebSocketServiceImpl) HandlePing(ctx *gin.Context, senderData dto.ChatSender) *exceptions.Exception {
 	ws.clientsMu.Lock()
 	if client, exists := ws.clients[senderData.UUID]; exists {
-		client.Conn.SetPongHandler(func(string) error {
-			client.Conn.SetReadDeadline(time.Now().Add(pingWait))
-			return nil
-		})
+		client.LastPing = time.Now()
+		client.Conn.SetReadDeadline(time.Now().Add(pingWait))
 	}
 	ws.clientsMu.Unlock()
 	return nil
@@ -288,4 +289,19 @@ func (ws *WebSocketServiceImpl) RemoveConnection(ctx *gin.Context, uuid string) 
 		delete(ws.clients, uuid)
 	}
 	ws.clientsMu.Unlock()
+}
+
+func (ws *WebSocketServiceImpl) monitorClients() {
+	for {
+		time.Sleep(pingWait / 2)
+		ws.clientsMu.Lock()
+		for uuid, client := range ws.clients {
+			if time.Since(client.LastPing) > pingWait {
+				client.Conn.Close()
+				delete(ws.clients, uuid)
+				fmt.Printf("Client %s disconnected due to inactivity\n", uuid)
+			}
+		}
+		ws.clientsMu.Unlock()
+	}
 }
