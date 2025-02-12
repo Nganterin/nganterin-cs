@@ -112,7 +112,7 @@ func (ws *WebSocketServiceImpl) pingConnection(conn *websocket.Conn, uuid string
 func (ws *WebSocketServiceImpl) HandleSendBehindChat(ctx *gin.Context, conn *websocket.Conn, senderData dto.ChatSender) *exceptions.Exception {
 	var data []models.Chats
 
-	if senderData.LastMessageUUID == "" {
+	if senderData.LastMessageUUID == "" || senderData.LastMessageUUID == "null" {
 		output, err := ws.repo.FindAll(ctx, ws.DB)
 		if err != nil {
 			return err
