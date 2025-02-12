@@ -37,10 +37,13 @@ func ChatMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		lastMessageUUID := c.Query("last")
+
 		sender := dto.ChatSender{
-			UUID:  claims["uuid"].(string),
-			Name:  claims["name"].(string),
-			Email: claims["email"].(string),
+			UUID:            claims["uuid"].(string),
+			Name:            claims["name"].(string),
+			Email:           claims["email"].(string),
+			LastMessageUUID: lastMessageUUID,
 		}
 
 		switch claims["type"].(string) {

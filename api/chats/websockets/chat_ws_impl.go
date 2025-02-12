@@ -7,6 +7,7 @@ import (
 	"nganterin-cs/api/chats/dto"
 	"nganterin-cs/api/chats/repositories"
 	"nganterin-cs/api/chats/services"
+	"nganterin-cs/models"
 	"nganterin-cs/pkg/exceptions"
 	"nganterin-cs/pkg/helpers"
 	"nganterin-cs/pkg/mapper"
@@ -80,6 +81,10 @@ func (ws *WebSocketServiceImpl) HandleConnection(ctx *gin.Context, senderData dt
 	}
 	ws.clientsMu.Unlock()
 
+	if senderData.Type == dto.Agent {
+		ws.HandleSendBehindChat(ctx, conn, senderData)
+	}
+
 	go ws.pingConnection(conn, senderData.UUID)
 
 	go ws.HandleMessages(ctx, conn, senderData)
@@ -102,6 +107,39 @@ func (ws *WebSocketServiceImpl) pingConnection(conn *websocket.Conn, uuid string
 			return
 		}
 	}
+}
+
+func (ws *WebSocketServiceImpl) HandleSendBehindChat(ctx *gin.Context, conn *websocket.Conn, senderData dto.ChatSender) *exceptions.Exception {
+	var data []models.Chats
+
+	if senderData.LastMessageUUID == "" {
+		output, err := ws.repo.FindAll(ctx, ws.DB)
+		if err != nil {
+			return err
+		}
+
+		data = output
+	} else {
+		output, err := ws.repo.FindAllByLastUUID(ctx, ws.DB, senderData.LastMessageUUID)
+		if err != nil {
+			return err
+		}
+
+		data = output
+	}
+
+	for _, d := range data {
+		output := mapper.MapChatModelToOutput(d)
+
+		msg, exc := json.Marshal(output)
+		if exc != nil {
+			return exceptions.NewException(http.StatusBadRequest, exc.Error())
+		}
+
+		ws.writeMessage(conn, msg)
+	}
+
+	return nil
 }
 
 func (ws *WebSocketServiceImpl) HandleMessages(ctx *gin.Context, conn *websocket.Conn, senderData dto.ChatSender) {

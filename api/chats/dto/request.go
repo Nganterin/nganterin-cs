@@ -17,10 +17,11 @@ const (
 )
 
 type ChatSender struct {
-	UUID  string `json:"uuid,omitempty"`
-	Name  string `json:"name,omitempty"`
-	Email string `json:"email,omitempty"`
-	Type  Type   `json:"type,omitempty"`
+	UUID            string `json:"uuid,omitempty"`
+	Name            string `json:"name,omitempty"`
+	Email           string `json:"email,omitempty"`
+	Type            Type   `json:"type,omitempty"`
+	LastMessageUUID string `json:"last_message_uuid"`
 }
 
 type Connection struct {

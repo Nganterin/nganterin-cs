@@ -38,3 +38,37 @@ func (r *CompRepositoriesImpl) FindByUUID(ctx *gin.Context, tx *gorm.DB, uuid st
 
 	return &chat, nil
 }
+
+func (r *CompRepositoriesImpl) FindAll(ctx *gin.Context, tx *gorm.DB) ([]models.Chats, *exceptions.Exception) {
+	var chats []models.Chats
+
+	result := tx.
+		Preload("Customer").
+		Order("id ASC").
+		Find(&chats)
+	if result.Error != nil {
+		return nil, exceptions.ParseGormError(tx, result.Error)
+	}
+
+	return chats, nil
+}
+
+func (r *CompRepositoriesImpl) FindAllByLastUUID(ctx *gin.Context, tx *gorm.DB, uuid string) ([]models.Chats, *exceptions.Exception) {
+	var chats []models.Chats
+
+	lastChat, err := r.FindByUUID(ctx, tx, uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	result := tx.
+		Preload("Customer").
+		Where("id > ?", lastChat.ID).
+		Order("id ASC").
+		Find(&chats)
+	if result.Error != nil {
+		return nil, exceptions.ParseGormError(tx, result.Error)
+	}
+
+	return chats, nil
+}
