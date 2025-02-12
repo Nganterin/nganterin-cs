@@ -245,11 +245,8 @@ func (ws *WebSocketServiceImpl) ProcessMessage(ctx *gin.Context, data *dto.Chats
 		return exceptions.NewException(http.StatusBadRequest, exc.Error())
 	}
 
-	if data.IsCSChat {
-		go ws.SendMessageToCustomer(ctx, data.CustomerUUID, msg)
-	} else {
-		go ws.SendMessageToAgents(ctx, msg)
-	}
+	go ws.SendMessageToCustomer(ctx, data.CustomerUUID, msg)
+	go ws.SendMessageToAgents(ctx, msg)
 
 	return nil
 }
