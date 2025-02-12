@@ -84,6 +84,8 @@ func (ws *WebSocketServiceImpl) HandleConnection(ctx *gin.Context, senderData dt
 
 	if senderData.Type == dto.Agent {
 		ws.HandleSendBehindChat(ctx, conn, senderData)
+	} else {
+		ws.HandleSendCustomerBehindChat(ctx, conn, senderData)
 	}
 
 	go ws.HandleMessages(ctx, conn, senderData)
@@ -103,6 +105,39 @@ func (ws *WebSocketServiceImpl) HandleSendBehindChat(ctx *gin.Context, conn *web
 		data = output
 	} else {
 		output, err := ws.repo.FindAllByLastUUID(ctx, ws.DB, senderData.LastMessageUUID)
+		if err != nil {
+			return err
+		}
+
+		data = output
+	}
+
+	for _, d := range data {
+		output := mapper.MapChatModelToOutput(d)
+
+		msg, exc := json.Marshal(output)
+		if exc != nil {
+			return exceptions.NewException(http.StatusBadRequest, exc.Error())
+		}
+
+		ws.writeMessage(conn, msg)
+	}
+
+	return nil
+}
+
+func (ws *WebSocketServiceImpl) HandleSendCustomerBehindChat(ctx *gin.Context, conn *websocket.Conn, senderData dto.ChatSender) *exceptions.Exception {
+	var data []models.Chats
+
+	if senderData.LastMessageUUID == "" || senderData.LastMessageUUID == "null" {
+		output, err := ws.repo.FindAllByCustomerUUID(ctx, ws.DB, senderData.UUID)
+		if err != nil {
+			return err
+		}
+
+		data = output
+	} else {
+		output, err := ws.repo.FindAllByLastUUIDAndCustomerUUID(ctx, ws.DB, senderData.LastMessageUUID, senderData.UUID)
 		if err != nil {
 			return err
 		}

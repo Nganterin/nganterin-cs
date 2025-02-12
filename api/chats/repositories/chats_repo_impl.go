@@ -72,3 +72,39 @@ func (r *CompRepositoriesImpl) FindAllByLastUUID(ctx *gin.Context, tx *gorm.DB, 
 
 	return chats, nil
 }
+
+func (r *CompRepositoriesImpl) FindAllByCustomerUUID(ctx *gin.Context, tx *gorm.DB, uuid string) ([]models.Chats, *exceptions.Exception) {
+	var chats []models.Chats
+
+	result := tx.
+		Preload("Customer").
+		Where("customer_uuid = ?", uuid).
+		Order("id ASC").
+		Find(&chats)
+	if result.Error != nil {
+		return nil, exceptions.ParseGormError(tx, result.Error)
+	}
+
+	return chats, nil
+}
+
+func (r *CompRepositoriesImpl) FindAllByLastUUIDAndCustomerUUID(ctx *gin.Context, tx *gorm.DB, lastUUID string, customerUUID string) ([]models.Chats, *exceptions.Exception) {
+	var chats []models.Chats
+
+	lastChat, err := r.FindByUUID(ctx, tx, lastUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := tx.
+		Preload("Customer").
+		Where("id > ?", lastChat.ID).
+		Where("customer_uuid = ?", customerUUID).
+		Order("id ASC").
+		Find(&chats)
+	if result.Error != nil {
+		return nil, exceptions.ParseGormError(tx, result.Error)
+	}
+
+	return chats, nil
+}
