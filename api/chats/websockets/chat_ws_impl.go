@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	customerRepo "nganterin-cs/api/customers/repositories"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
@@ -28,22 +30,24 @@ const (
 )
 
 type WebSocketServiceImpl struct {
-	repo      repositories.CompRepositories
-	DB        *gorm.DB
-	validate  *validator.Validate
-	services  services.CompServices
-	clients   map[string]*dto.Connection
-	clientsMu sync.Mutex
-	upgrader  websocket.Upgrader
+	repo         repositories.CompRepositories
+	customerRepo customerRepo.CompRepositories
+	DB           *gorm.DB
+	validate     *validator.Validate
+	services     services.CompServices
+	clients      map[string]*dto.Connection
+	clientsMu    sync.Mutex
+	upgrader     websocket.Upgrader
 }
 
-func NewWebSocketServices(services services.CompServices, repo repositories.CompRepositories, DB *gorm.DB, validate *validator.Validate) WebSocketServices {
+func NewWebSocketServices(services services.CompServices, repo repositories.CompRepositories, customerRepo customerRepo.CompRepositories, DB *gorm.DB, validate *validator.Validate) WebSocketServices {
 	ws := &WebSocketServiceImpl{
-		repo:     repo,
-		DB:       DB,
-		validate: validate,
-		services: services,
-		clients:  make(map[string]*dto.Connection),
+		repo:         repo,
+		customerRepo: customerRepo,
+		DB:           DB,
+		validate:     validate,
+		services:     services,
+		clients:      make(map[string]*dto.Connection),
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
 				return true
@@ -88,10 +92,41 @@ func (ws *WebSocketServiceImpl) HandleConnection(ctx *gin.Context, senderData dt
 	if senderData.Type == dto.Agent {
 		ws.HandleSendBehindChat(ctx, conn, senderData)
 	} else {
+		ws.HandleFirstConnection(ctx, conn, senderData)
 		ws.HandleSendCustomerBehindChat(ctx, conn, senderData)
 	}
 
 	go ws.HandleMessages(ctx, conn, senderData)
+
+	return nil
+}
+
+func (ws *WebSocketServiceImpl) HandleFirstConnection(ctx *gin.Context, conn *websocket.Conn, senderData dto.ChatSender) *exceptions.Exception {
+	chats, err := ws.repo.FindAllByCustomerUUID(ctx, ws.DB, senderData.UUID)
+	if err != nil {
+		return err
+	}
+
+	if len(chats) == 0 {
+		messages := []dto.Chats{
+			{
+				Type:         dto.Message,
+				CustomerUUID: senderData.UUID,
+				IsCSChat:     true,
+				Message:      "Welcome to Temenin!",
+			},
+			{
+				Type:         dto.Message,
+				CustomerUUID: senderData.UUID,
+				IsCSChat:     true,
+				Message:      "We're here to assist you with any questions or needs related to Nganterin. Feel free to ask anything! 😊",
+			},
+		}
+
+		for i := range messages {
+			ws.ProcessMessage(ctx, &messages[i])
+		}
+	}
 
 	return nil
 }
