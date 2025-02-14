@@ -92,8 +92,8 @@ func (ws *WebSocketServiceImpl) HandleConnection(ctx *gin.Context, senderData dt
 	if senderData.Type == dto.Agent {
 		ws.HandleSendBehindChat(ctx, conn, senderData)
 	} else {
-		ws.HandleFirstConnection(ctx, conn, senderData)
 		ws.HandleSendCustomerBehindChat(ctx, conn, senderData)
+		ws.HandleFirstConnection(ctx, conn, senderData)
 	}
 
 	go ws.HandleMessages(ctx, conn, senderData)
