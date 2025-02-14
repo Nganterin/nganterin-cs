@@ -1,6 +1,7 @@
 // go:build wireinject
 // go:build wireinject
 // go:build wireinject
+//go:build wireinject
 // +build wireinject
 
 package injectors
@@ -31,6 +32,7 @@ var agentFeatureSet = wire.NewSet(
 )
 
 var chatFeatureSet = wire.NewSet(
+	customerRepositories.NewComponentRepository,
 	chatRepositories.NewComponentRepository,
 	chatWebsockets.NewWebSocketServices,
 	chatServices.NewComponentServices,

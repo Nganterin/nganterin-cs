@@ -34,7 +34,8 @@ func InitializeAgentController(db *gorm.DB, validate *validator.Validate) contro
 func InitializeChatController(db *gorm.DB, validate *validator.Validate) controllers2.CompControllers {
 	compRepositories := repositories2.NewComponentRepository()
 	compServices := services2.NewComponentServices(compRepositories, db, validate)
-	webSocketServices := websockets.NewWebSocketServices(compServices, compRepositories, db, validate)
+	repositoriesCompRepositories := repositories3.NewComponentRepository()
+	webSocketServices := websockets.NewWebSocketServices(compServices, compRepositories, repositoriesCompRepositories, db, validate)
 	compControllers := controllers2.NewCompController(compServices, webSocketServices)
 	return compControllers
 }
@@ -50,6 +51,6 @@ func InitializeCustomerController(db *gorm.DB, validate *validator.Validate) con
 
 var agentFeatureSet = wire.NewSet(repositories.NewComponentRepository, services.NewComponentServices, controllers.NewCompController)
 
-var chatFeatureSet = wire.NewSet(repositories2.NewComponentRepository, websockets.NewWebSocketServices, services2.NewComponentServices, controllers2.NewCompController)
+var chatFeatureSet = wire.NewSet(repositories3.NewComponentRepository, repositories2.NewComponentRepository, websockets.NewWebSocketServices, services2.NewComponentServices, controllers2.NewCompController)
 
 var customerFeatureSet = wire.NewSet(repositories3.NewComponentRepository, services3.NewComponentServices, controllers3.NewCompController)
